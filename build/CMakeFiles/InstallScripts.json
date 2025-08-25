@@ -1,9 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/markus/Projekte/Game/build/cmake_install.cmake",
-		"/home/markus/Projekte/Game/build/external/cmake_install.cmake",
-		"/home/markus/Projekte/Game/build/external/SDL3/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
