@@ -4,7 +4,7 @@
 int main() {
     Video video;
     video.initialize();
-    if(!video)
+    if(!video.isInitialized())
         return 1;
 
     video.swapBuffers();
