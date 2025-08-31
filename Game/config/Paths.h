@@ -5,9 +5,9 @@ namespace paths {
         constexpr const char* config = "<HOME>/.config/Game";
         constexpr const char* prefix = "<HOME>/.local/share/Game";
     #elif _WIN32
-        constexpr const char* cache = "<APPDATA>/Game/Cache";
-        constexpr const char* config = "<APPDATA>/Game";
-        constexpr const char* prefix = "<APPDATA>/Game";
+        constexpr const char* cache = "<WORKING>/cache";
+        constexpr const char* config = "<WORKING>";
+        constexpr const char* prefix = "<WORKING>";
     #elif __APPLE__
         constexpr const char* cache = "<HOME>/Library/Caches/Game";
         constexpr const char* config = "<HOME>/Library/Application Support/Game";

@@ -1,5 +1,8 @@
 #include "Log.h"
 
+#include <config/Config.h>
+#include <config/Paths.h>
+
 #include <string>
 #include <iostream>
 #include <filesystem>
@@ -48,13 +51,13 @@ void LogMessage::formatLog(const std::string message) {
 
 void LogMessage::flush() {
     if((target & LogTarget::File) == LogTarget::File) {
-        log.logToFile(logBuffer);
+        log.logToFile(logBuffer + "\n");
     }
     if((target & LogTarget::Stdout) == LogTarget::Stdout) {
-        std::cout << logBuffer << "\n";
+        std::cout << logBuffer << std::endl;
     }
     if((target & LogTarget::Stderr) == LogTarget::Stderr) {
-        std::cerr << logBuffer << "\n";
+        std::cerr << logBuffer << std::endl;
     }
 }
 
@@ -65,11 +68,14 @@ LogMessage Log::write(LogTarget target, const std::string message) {
 
 Log::Log() { //-------------------------------------------------------------------------------
     // WICHTIG: Noch Settings/Config modul erstellen für pfade für z.B. log datei/config datei
-    fs::path logFile = "GameLog.log";
+    fs::path logFile = CFG.replacePath(paths::system::prefix);
+    logFile /= "latest.log";
+
     if(fs::exists(logFile)) {
         fs::remove(logFile);
     }
-    logWriter.open("GameLog.log");
+
+    logWriter.open(logFile);
     if(!logWriter.is_open())
         write(LogTarget::Stderr, "Failed to open %s") % logFile.string();
 }
@@ -80,6 +86,7 @@ bool Log::logToFile(const std::string& ms) {
         return false;
 
     logWriter.write(ms.c_str(), ms.size());
+    logWriter.flush();
     writerLock.unlock();
     return true;
 }
