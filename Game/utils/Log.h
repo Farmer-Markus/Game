@@ -1,17 +1,19 @@
-#include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <string>
 
-namespace fs = std::filesystem;
 
 namespace utils {
     
 enum class LogTarget {
     File = 1,   // 001 All can be combined to write to multiple targets
     Stdout = 2, // 010
-    Stderr = 4  // 100
+    Stderr = 4,  // 100
+
+    FileErr = File | Stderr
 };
 
+// add operator to LogTraget to use with | and &
 inline LogTarget operator|(LogTarget first, LogTarget sec){
     return static_cast<LogTarget>(
         static_cast<unsigned>(first) | static_cast<unsigned>(sec));
@@ -26,16 +28,20 @@ class Log;
 
 class LogMessage {
 public:
-    // std::move to move the string instead of copying
     LogMessage(Log& lg, LogTarget tg, const std::string arg)
-                : log(lg), target(tg), logBuffer(std::move(arg)) {};
+                : log(lg), target(tg), logBuffer(arg) {}
 
     ~LogMessage() {
         flush();
     }
 
     LogMessage& operator%(const std::string message) {
-        formatLog(std::move(message));
+        formatLog(message);
+        return *this;
+    }
+
+    LogMessage& operator%(const int message) {
+        formatLog(std::to_string(message));
         return *this;
     }
 
@@ -53,16 +59,7 @@ private:
 class Log {
     friend LogMessage;
 public:
-    Log() {
-        // WICHTIG: Noch Settings/Config modul erstellen für pfade für z.B. log datei/config datei
-        fs::path logFile = "GameLog.log";
-        if(fs::exists(logFile)) {
-            fs::remove(logFile);
-        }
-        logWriter.open("GameLog.log");
-        if(!logWriter.is_open())
-            write(LogTarget::Stderr, "Failed to open %s") % logFile.string();
-    };
+    Log();
 
     ~Log() {
         if(logWriter.is_open())
@@ -77,10 +74,10 @@ public:
     LogMessage write(LogTarget target, const std::string message);
 
 private:
-    bool writeToFile(const std::string& ms);
+    bool logToFile(const std::string& ms);
 
+    std::mutex writerLock;
     std::ofstream logWriter;
-
 };
 
 

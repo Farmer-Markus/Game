@@ -2,7 +2,10 @@
 
 #include <string>
 #include <iostream>
+#include <filesystem>
 
+
+namespace fs = std::filesystem;
 
 namespace utils {
 
@@ -24,18 +27,28 @@ Bitoperator:
     000001 <<2  returns 000100
 */
 
+/*LogMessage::LogMessage(Log& lg, LogTarget tg, const std::string arg)
+                : log(lg), target(tg) {
+    
+
+}*/
+
 void LogMessage::formatLog(const std::string message) {
-    size_t t = logBuffer.find("%s");
-    if(t != std::string::npos) {
-        log.write(LogTarget::Stderr, 
-            "Log: Failed to replace '%s' with string. Did you forget to insert '%s' ?");
-    } else
-        logBuffer.replace(t, 2, message);
+    // %s is the placeholder for a string
+    size_t ph = logBuffer.find("%s");
+    if(ph != std::string::npos) {
+        logBuffer.replace(ph, 2, message);
+
+    } else {
+        log.write(LogTarget::FileErr, 
+            "Log: Failed to replace '%s' with additional message. Did you forget to insert '%s' ?");
+        logBuffer.clear();
+    }
 }
 
 void LogMessage::flush() {
     if((target & LogTarget::File) == LogTarget::File) {
-        log.writeToFile(logBuffer);
+        log.logToFile(logBuffer);
     }
     if((target & LogTarget::Stdout) == LogTarget::Stdout) {
         std::cout << logBuffer << "\n";
@@ -49,11 +62,25 @@ LogMessage Log::write(LogTarget target, const std::string message) {
     return LogMessage(*this, target, message);
 }
 
-bool Log::writeToFile(const std::string& ms) {
+
+Log::Log() { //-------------------------------------------------------------------------------
+    // WICHTIG: Noch Settings/Config modul erstellen für pfade für z.B. log datei/config datei
+    fs::path logFile = "GameLog.log";
+    if(fs::exists(logFile)) {
+        fs::remove(logFile);
+    }
+    logWriter.open("GameLog.log");
+    if(!logWriter.is_open())
+        write(LogTarget::Stderr, "Failed to open %s") % logFile.string();
+}
+
+bool Log::logToFile(const std::string& ms) {
+    writerLock.lock();
     if(!logWriter.is_open())
         return false;
 
     logWriter.write(ms.c_str(), ms.size());
+    writerLock.unlock();
     return true;
 }
 

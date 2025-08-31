@@ -15,18 +15,18 @@ bool Video::initialize() {
 
     mainWindow = SDL_CreateWindow("Game", 800, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
     if(mainWindow == nullptr) {
-        LOG.write(utils::LogTarget::File | utils::LogTarget::Stderr, "Video: Failed to create SDL window: %s") % SDL_GetError();
+        LOG.write(utils::LogTarget::FileErr | utils::LogTarget::Stderr, "Video: Failed to create SDL window: %s") % SDL_GetError();
         return false;
     }
 
     glContext = SDL_GL_CreateContext(mainWindow);
     if(glContext == nullptr) {
-        LOG.write(utils::LogTarget::File | utils::LogTarget::Stderr, "Video: Failed to create OpenGl context: %s") % SDL_GetError();
+        LOG.write(utils::LogTarget::FileErr | utils::LogTarget::Stderr, "Video: Failed to create OpenGl context: %s") % SDL_GetError();
         return false;
     }
 
     if(!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-        LOG.write(utils::LogTarget::File | utils::LogTarget::Stderr, "Video: Failed to initialize glad");
+        LOG.write(utils::LogTarget::FileErr | utils::LogTarget::Stderr, "Video: Failed to initialize glad");
         return false;
     }
 
