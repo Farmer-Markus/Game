@@ -20,6 +20,7 @@ int main() {
     LOG.write(utils::LogTarget::Stdout, "PATH: %s") % config.replacePath(paths::system::config);
     LOG.write(utils::LogTarget::Stdout, "PATH: %s") % config.replacePath(paths::system::cache);
     LOG.write(utils::LogTarget::Stdout, "PATH: %s") % config.replacePath(paths::system::prefix);
+    LOG.write(utils::LogTarget::Stdout, "PATH: %s") % config.replacePath("<WORKING>/test/LOG.txt");
 
     SDL_Delay(5000);
     return 0;

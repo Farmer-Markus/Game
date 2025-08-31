@@ -6,6 +6,8 @@
 #include <utils/Log.h>
 #include <string>
 
+namespace fs = std::filesystem;
+
 Config::Config() {
     
 }
@@ -14,8 +16,9 @@ std::string Config::getWorkingPath() {
 #ifdef DEBUG
     LOG.write(utils::LogTarget::Stderr, "Config: Need to get working path");
 #endif
-    pathMap["WORKING"] = std::filesystem::current_path();
-    return std::filesystem::current_path();
+    std::string path = fs::current_path().string();
+    pathMap["WORKING"] = path;
+    return path;
 }
 
 std::string Config::getHomePath() {
@@ -49,7 +52,7 @@ std::string Config::getAppDataPath() {
 }
 
 
-[[nodiscard]] std::string Config::replacePath(const std::string path) {
+[[nodiscard]] fs::path Config::replacePath(const std::string path) {
     std::string finalPath;
     size_t currOffset = 0;
 
@@ -111,5 +114,5 @@ std::string Config::getAppDataPath() {
         }
     }
 
-    return finalPath;
+    return fs::path(finalPath).make_preferred();
 }

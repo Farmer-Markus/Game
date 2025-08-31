@@ -1,5 +1,6 @@
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 
 class Config {
 public:
@@ -9,7 +10,7 @@ public:
     // and replaces <HOME> with the system home path
     // Same with CONFIG, CACHE and DATA(game data folder)
     // WORKING (working directory)
-    [[nodiscard]] std::string replacePath(const std::string path);
+    [[nodiscard]] std::filesystem::path replacePath(const std::string path);
 
 private:
     std::string getWorkingPath();
