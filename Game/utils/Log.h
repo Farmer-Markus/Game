@@ -74,8 +74,10 @@ public:
     LogMessage write(LogTarget target, const std::string message);
 
 private:
+    bool openWriter();
     bool logToFile(const std::string& ms);
 
+    bool writerInitialized = false;
     std::mutex writerLock;
     std::ofstream logWriter;
 };

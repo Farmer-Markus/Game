@@ -13,7 +13,12 @@ namespace fs = std::filesystem;
 Config::Config() {
     pathMap["WORKING"] = getWorkingPath();
     pathMap["HOME"] = getHomePath();
-    pathMap["DATA"] = getWorkingPath() + "/data";
+
+    pathMap["CONFIG"] = replacePath(paths::system::config);
+    pathMap["CACHE"] = replacePath(paths::system::cache);
+    pathMap["PREFIX"] = replacePath(paths::system::prefix);
+
+    pathMap["DATA"] = replacePath(paths::game::data);
 
     prepareGameDirs();
 }
@@ -24,10 +29,14 @@ std::string Config::getWorkingPath() {
 }
 
 std::string Config::getHomePath() {
+#ifdef _WIN32
+    const auto home = getenv("USERPROFILE");
+#else
     const auto home = getenv("HOME");
+#endif
     std::string homePath;
     if(home == NULL || std::string(home).empty()) {
-        LOG.write(utils::LogTarget::FileErr, "Config: Failed to get Home path. Using working directory.");
+        LOG.write(utils::LogTarget::Stderr, "Config: Failed to get Home path. Using working directory.");
         homePath = getWorkingPath();
 
     } else
@@ -84,7 +93,7 @@ std::string Config::getHomePath() {
 
 void Config::replacePathEntry(const std::string key, const std::string path) {
 #ifdef DEBUG
-    LOG.write(utils::LogTarget::FileErr, "Config: Replacing path entry '%s' with path: %s") % key % path;
+    LOG.write(utils::LogTarget::Stdout, "Config: Replacing path entry '%s' with path: %s") % key % path;
 #endif
     pathMap[key] = path;
 }

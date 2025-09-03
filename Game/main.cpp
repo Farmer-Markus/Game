@@ -17,9 +17,9 @@ int main() {
     video.swapBuffers();
 
     Config config;
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath(paths::system::config);
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath(paths::system::cache);
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath(paths::system::prefix);
+    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<CONFIG>");
+    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<CACHE>");
+    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<PREFIX>");
     LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<WORKING>/test/LOG.txt");
     LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<DATA>/assets");
 

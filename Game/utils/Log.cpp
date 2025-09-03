@@ -51,7 +51,13 @@ void LogMessage::formatLog(const std::string message) {
 
 void LogMessage::flush() {
     if((target & LogTarget::File) == LogTarget::File) {
-        log.logToFile(logBuffer + "\n");
+        if(!log.writerInitialized && !log.openWriter()) {
+            LOG.write(LogTarget::Stderr, "Log: Failed to open log file. Logs will only be printed to terminal.");
+
+        } else {
+            log.logToFile(logBuffer + "\n");
+        }
+
     }
     if((target & LogTarget::Stdout) == LogTarget::Stdout) {
         std::cout << logBuffer << std::endl;
@@ -68,16 +74,15 @@ LogMessage Log::write(LogTarget target, const std::string message) {
 
 Log::Log() { //-------------------------------------------------------------------------------
     // WICHTIG: Noch Settings/Config modul erstellen für pfade für z.B. log datei/config datei
-    fs::path logFile = CFG.replacePath(paths::system::prefix);
-    logFile /= "latest.log";
 
-    if(fs::exists(logFile)) {
-        fs::remove(logFile);
-    }
+}
 
-    logWriter.open(logFile);
-    if(!logWriter.is_open())
-        write(LogTarget::Stderr, "Failed to open %s") % logFile.string();
+bool Log::openWriter() {
+    fs::path log = CFG.replacePath(paths::game::latestLog);
+    logWriter.open(log);
+    writerInitialized = true;
+    
+    return logWriter.is_open();
 }
 
 bool Log::logToFile(const std::string& ms) {

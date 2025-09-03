@@ -14,7 +14,7 @@ public:
     // Can read path like: <HOME>/.local/share/game
     // and replaces <HOME> with the system home path
     // Same with CONFIG, CACHE and DATA(game data folder)
-    // WORKING (working directory)
+    // WORKING (working directory) PREFIX
     [[nodiscard]] std::filesystem::path replacePath(const std::string path) const;
 
     // Replace system path in pathMap
