@@ -60,6 +60,10 @@ bool Video::getWindowSize(int* w, int* h) const {
     return SDL_GetWindowSize(mainWindow, w, h) ;
 }
 
+void Video::viewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+    glViewport(x, y, width, height);
+}
+
 bool Video::setFullscreen(bool mode) const {
     return SDL_SetWindowFullscreen(mainWindow, mode);
 }

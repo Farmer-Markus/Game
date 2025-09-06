@@ -15,6 +15,9 @@ public:
     void swapBuffers() const;
 
     bool getWindowSize(int* w, int* h) const;
+    void viewport(unsigned int x, unsigned int y,
+        unsigned int width, unsigned int height);
+ 
     bool setFullscreen(bool mode) const;
     
 

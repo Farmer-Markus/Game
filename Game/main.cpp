@@ -38,8 +38,8 @@ bool glTesting() {
     };
 
     try {
-        //shader.create(CFG.replacePath("<DATA>/shaders/main.vert"), CFG.replacePath("<DATA>/shaders/main.frag"));
-        shader.create(vertShaderSource, fragShaderSource);
+        shader.create(CFG.replacePath("<DATA>/shaders/main.vert"), CFG.replacePath("<DATA>/shaders/main.frag"));
+        //shader.create(vertShaderSource, fragShaderSource);
     } catch (std::runtime_error e) {
         return false;
     }
@@ -88,6 +88,13 @@ int main() {
                     running = false;
                     break;
                 
+                case SDL_EVENT_WINDOW_RESIZED: {
+                    int w,h;
+                    video.getWindowSize(&w, &h);
+                    video.viewport(0, 0, w, h);
+                    break;
+                }
+                
                 default:
                     break;
             }
@@ -96,7 +103,7 @@ int main() {
 
         glUpdate();
         video.swapBuffers();
-        SDL_Delay(100);
+        //SDL_Delay(100);
     }
     
     shader.destroy();
