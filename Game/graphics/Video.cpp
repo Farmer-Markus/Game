@@ -6,6 +6,21 @@
 #include <glad/glad.h>
 
 
+Video::~Video() {
+    destroy();
+}
+
+void Video::destroy() {
+    if(glContext != NULL) {
+        SDL_GL_DestroyContext(glContext);
+        glContext = NULL;
+    }
+    if(mainWindow != NULL) {
+        SDL_DestroyWindow(mainWindow);
+        mainWindow = NULL;
+    }
+}
+
 bool Video::initialize() {
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -37,10 +52,14 @@ bool Video::isInitialized() const {
     return mainWindow != NULL && glContext != NULL;
 }
 
-void Video::swapBuffers() {
+void Video::swapBuffers() const {
     SDL_GL_SwapWindow(mainWindow);
 }
 
-bool Video::getWindowSize(int* w, int* h) {
-    return SDL_GetWindowSize(mainWindow, w, h);
+bool Video::getWindowSize(int* w, int* h) const {
+    return SDL_GetWindowSize(mainWindow, w, h) ;
+}
+
+bool Video::setFullscreen(bool mode) const {
+    return SDL_SetWindowFullscreen(mainWindow, mode);
 }

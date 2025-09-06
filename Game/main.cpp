@@ -1,12 +1,74 @@
+#include <SDL3/SDL_events.h>
 #include <graphics/Video.h>
-#include <filesystem/Filesystem.h>
 #include <config/Config.h>
+#include <stdexcept>
 #include <utils/Log.h>
+#include <graphics/Shader.h>
 
 #include <config/Paths.h>
-
+#include <glad/glad.h>
 
 #include <SDL3/SDL.h>
+
+
+Shader shader;
+unsigned int VBO;
+unsigned int VAO;
+
+
+bool glTesting() {
+    const char* vertShaderSource = "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "}\0";
+
+    const char* fragShaderSource = "#version 330 core\n"
+        "out vec4 FragColor;\n"
+
+        "void main() {\n"
+            "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "}\0";
+
+    float vboData[] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f,  0.5f, 0.0f
+    };
+
+    try {
+        //shader.create(CFG.replacePath("<DATA>/shaders/main.vert"), CFG.replacePath("<DATA>/shaders/main.frag"));
+        shader.create(vertShaderSource, fragShaderSource);
+    } catch (std::runtime_error e) {
+        return false;
+    }
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vboData), vboData, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+
+
+
+
+    return true;
+}
+
+void glUpdate() {
+    glUseProgram(shader);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+}
 
 int main() {
     Video video;
@@ -14,17 +76,33 @@ int main() {
     if(!video.isInitialized())
         return 1;
 
-    video.swapBuffers();
+    if(!glTesting())
+        return 1;
+    
+    bool running = true;
+    while(running) {
+        SDL_Event ev;
+        while(SDL_PollEvent(&ev)) {
+            switch(ev.type) {
+                case SDL_EVENT_QUIT:
+                    running = false;
+                    break;
+                
+                default:
+                    break;
+            }
+        }
+        
 
-    Config config;
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<CONFIG>");
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<CACHE>");
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<PREFIX>");
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<WORKING>/test/LOG.txt");
-    LOG.write(utils::LogTarget::FileErr, "PATH: %s") % config.replacePath("<DATA>/assets");
+        glUpdate();
+        video.swapBuffers();
+        SDL_Delay(100);
+    }
+    
+    shader.destroy();
+    video.destroy();
 
-
-    SDL_Delay(5000);
+    //SDL_Delay(5000);
     return 0;
 }
 

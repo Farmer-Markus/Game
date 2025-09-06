@@ -11,18 +11,14 @@ public:
         return instance;
     }
 
-    // Can read path like: <HOME>/.local/share/game
-    // and replaces <HOME> with the system home path
-    // Same with CONFIG, CACHE and DATA(game data folder)
-    // WORKING (working directory) PREFIX
+    // Replaces path placeholders like: <HOME>, <WORKING>, <CONFIG>, <CACHE>, <PREFIX>, <DATA>
     [[nodiscard]] std::filesystem::path replacePath(const std::string path) const;
 
-    // Replace system path in pathMap
+    // Replace path in pathMap. Used to overwrite paths
     void replacePathEntry(const std::string key, const std::string path);
 
-    bool prepareGameDirs() const;
-
 private:
+    bool prepareGameDirs() const;
     std::string getWorkingPath();
     std::string getHomePath();
 

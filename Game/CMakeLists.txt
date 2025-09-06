@@ -7,7 +7,6 @@ endmacro()
 addDirectory(graphics)
 addDirectory(utils)
 addDirectory(config)
-#addDirectory(filesystem)
 
 add_executable(game main.cpp ${SOURCES_SUBDIRS})
 target_include_directories(game PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

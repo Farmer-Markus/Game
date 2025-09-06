@@ -14,35 +14,14 @@ Config::Config() {
     pathMap["WORKING"] = getWorkingPath();
     pathMap["HOME"] = getHomePath();
 
-    pathMap["CONFIG"] = replacePath(paths::system::config);
-    pathMap["CACHE"] = replacePath(paths::system::cache);
-    pathMap["PREFIX"] = replacePath(paths::system::prefix);
+    // .string() to make windows compiler happy
+    pathMap["CONFIG"] = replacePath(paths::system::config).string();
+    pathMap["CACHE"] = replacePath(paths::system::cache).string();
+    pathMap["PREFIX"] = replacePath(paths::system::prefix).string();
 
-    pathMap["DATA"] = replacePath(paths::game::data);
+    pathMap["DATA"] = replacePath(paths::game::data).string();
 
     prepareGameDirs();
-}
-
-std::string Config::getWorkingPath() {
-    std::string path = fs::current_path().string();
-    return path;
-}
-
-std::string Config::getHomePath() {
-#ifdef _WIN32
-    const auto home = getenv("USERPROFILE");
-#else
-    const auto home = getenv("HOME");
-#endif
-    std::string homePath;
-    if(home == NULL || std::string(home).empty()) {
-        LOG.write(utils::LogTarget::Stderr, "Config: Failed to get Home path. Using working directory.");
-        homePath = getWorkingPath();
-
-    } else
-        homePath = home;
-    
-    return homePath;
 }
 
 [[nodiscard]] std::filesystem::path Config::replacePath(const std::string path) const {
@@ -102,4 +81,26 @@ bool Config::prepareGameDirs() const {
     return fs::create_directories(replacePath(paths::system::config)) &&
         fs::create_directories(replacePath(paths::system::prefix)) &&
         fs::create_directories(replacePath(paths::system::cache));
+}
+
+std::string Config::getWorkingPath() {
+    std::string path = fs::current_path().string();
+    return path;
+}
+
+std::string Config::getHomePath() {
+#ifdef _WIN32
+    const auto home = getenv("USERPROFILE");
+#else
+    const auto home = getenv("HOME");
+#endif
+    std::string homePath;
+    if(home == NULL || std::string(home).empty()) {
+        LOG.write(utils::LogTarget::Stderr, "Config: Failed to get Home path. Using working directory.");
+        homePath = getWorkingPath();
+
+    } else
+        homePath = home;
+    
+    return homePath;
 }
