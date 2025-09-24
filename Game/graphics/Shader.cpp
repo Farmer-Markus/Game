@@ -9,18 +9,18 @@
 
 
 Shader::Shader(const char* vertSrc, const char* fragSrc) {
-    create(vertSrc, fragSrc);
+    load(vertSrc, fragSrc);
 }
 
 Shader::Shader(const fs::path vertPath, const fs::path fragPath) {
-    create(vertPath, fragPath);
+    load(vertPath, fragPath);
 }
 
 Shader::~Shader() {
     destroy();
 }
 
-void Shader::create(const char* vertSrc, const char* fragSrc) {
+void Shader::load(const char* vertSrc, const char* fragSrc) {
     unsigned int frag, vert;
 
     frag = glCreateShader(GL_FRAGMENT_SHADER);
@@ -66,7 +66,7 @@ void Shader::create(const char* vertSrc, const char* fragSrc) {
     glDeleteShader(vert);
 }
 
-void Shader::create(const fs::path vertPath, const fs::path fragPath) {
+void Shader::load(const fs::path vertPath, const fs::path fragPath) {
     std::stringstream strm;
     std::ifstream in;
 
@@ -94,7 +94,7 @@ void Shader::create(const fs::path vertPath, const fs::path fragPath) {
     strm.str("");
     strm.clear();
 
-    create(vertSrc.c_str(), fragtSrc.c_str());
+    load(vertSrc.c_str(), fragtSrc.c_str());
 }
 
 // Will crash if GL context is destroyed before this function

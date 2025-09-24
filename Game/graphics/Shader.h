@@ -25,14 +25,14 @@ public:
         shaderProgram = val;
     }
 
-    // From variable
-    void create(const char* vertSrc, const char* fragSrc);
-
-    // From file
-    void create(const fs::path vertPath, const fs::path fragPath);
-
     // Delete shader program
     void destroy();
+
+    // From variable
+    void load(const char* vertSrc, const char* fragSrc);
+
+    // From file
+    void load(const fs::path vertPath, const fs::path fragPath);
     
 
 private:
