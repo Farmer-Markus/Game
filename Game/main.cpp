@@ -1,5 +1,6 @@
 #include "SDL3/SDL_keyboard.h"
 #include "SDL3/SDL_keycode.h"
+#include "SDL3/SDL_mouse.h"
 #include "SDL3/SDL_oldnames.h"
 #include "SDL3/SDL_timer.h"
 #include <GLES2/gl2.h>
@@ -190,7 +191,7 @@ bool glTesting() {
 
     int w,h;
     video.getWindowSize(&w, &h);
-    projection = glm::perspective(glm::radians(45.0f), (float)w / (float)h , 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float)w / (float)h , 0.1f, 10000.0f);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -330,6 +331,8 @@ int main() {
     if(!video.isInitialized())
         return 1;
 
+    video.setMouseCapture(true);
+
     if(!glTesting())
         return 1;
     
@@ -345,7 +348,7 @@ int main() {
                 case SDL_EVENT_WINDOW_RESIZED: {
                     int w,h;
                     video.getWindowSize(&w, &h);
-                    video.viewport(0, 0, w, h);
+                    video.setViewport(0, 0, w, h);
                     break;
                 }
 
@@ -355,22 +358,22 @@ int main() {
                             if(SDL_GetModState() & SDL_KMOD_LSHIFT)
                                 pitch -= rotation;
                             else
-                                cameraPos += cameraFront * 0.05f;
+                                cameraPos += glm::normalize(glm::vec3(cameraFront.x, 0.0f, cameraFront.z)) * 0.05f;
                             break;
                         
                         case SDLK_S:
                             if(SDL_GetModState() & SDL_KMOD_LSHIFT)
                                 pitch += rotation;
                             else
-                                cameraPos -= cameraFront * 0.05f;
+                                cameraPos -= glm::normalize(glm::vec3(cameraFront.x, 0.0f, cameraFront.z)) * 0.05f;
                             break;
 
                         case SDLK_A:
-                            cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp) * 0.05f);
+                            cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * 0.05f;
                             break;
                         
                         case SDLK_D:
-                            cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp) * 0.05f);
+                            cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * 0.05f;
                             break;
                         
                         case SDLK_Q:
@@ -389,6 +392,20 @@ int main() {
                             cameraPos -= glm::vec3(0.0f, 1.0f, 0.0f) * 0.3f;
                             break;
                         
+                    }
+
+                    break;
+                }
+
+                case SDL_EVENT_MOUSE_MOTION: {
+                    float sensivity = 0.15f;
+                    yaw += ev.motion.xrel * sensivity;
+                    pitch += -ev.motion.yrel * sensivity;
+
+                    if(pitch > 89.0f) {
+                        pitch = 89.0f;
+                    } else if(pitch < -89.0f) {
+                        pitch = -89.0f;
                     }
 
                     break;

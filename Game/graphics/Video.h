@@ -1,3 +1,4 @@
+#pragma once
 #include <SDL3/SDL_video.h>
 
 class Video {
@@ -15,14 +16,15 @@ public:
     void swapBuffers() const;
 
     bool getWindowSize(int* w, int* h) const;
-    void viewport(unsigned int x, unsigned int y,
-        unsigned int width, unsigned int height);
+    void setViewport(unsigned int x, unsigned int y,
+        unsigned int width, unsigned int height) const;
  
     bool setFullscreen(bool mode) const;
+    bool setMouseCapture(bool mode) const;
     
 
 private:
 
-    SDL_Window* mainWindow = NULL;
-    SDL_GLContext glContext = NULL;
+    SDL_Window* m_window = NULL;
+    SDL_GLContext m_glContext = NULL;
 };

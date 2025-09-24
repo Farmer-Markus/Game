@@ -38,32 +38,32 @@ Bitoperator:
 
 void LogMessage::formatLog(const std::string message) {
     // %s is the placeholder for a string
-    size_t ph = logBuffer.find("%s");
+    size_t ph = m_logBuffer.find("%s");
     if(ph != std::string::npos) {
-        logBuffer.replace(ph, 2, message);
+        m_logBuffer.replace(ph, 2, message);
 
     } else {
-        log.write(LogTarget::FileErr, 
+        m_log.write(LogTarget::FileErr, 
             "Log: Failed to replace '%s' with additional message. Did you forget to insert '%s' ?");
-        logBuffer.clear();
+        m_logBuffer.clear();
     }
 }
 
 void LogMessage::flush() {
-    if((target & LogTarget::File) == LogTarget::File) {
-        if(!log.writerInitialized && !log.openWriter()) {
+    if((m_target & LogTarget::File) == LogTarget::File) {
+        if(!m_log.m_writerInitialized && !m_log.openWriter()) {
             LOG.write(LogTarget::Stderr, "Log: Failed to open log file. Logs will only be printed to terminal.");
 
         } else {
-            log.logToFile(logBuffer + "\n");
+            m_log.logToFile(m_logBuffer + "\n");
         }
 
     }
-    if((target & LogTarget::Stdout) == LogTarget::Stdout) {
-        std::cout << logBuffer << std::endl;
+    if((m_target & LogTarget::Stdout) == LogTarget::Stdout) {
+        std::cout << m_logBuffer << std::endl;
     }
-    if((target & LogTarget::Stderr) == LogTarget::Stderr) {
-        std::cerr << logBuffer << std::endl;
+    if((m_target & LogTarget::Stderr) == LogTarget::Stderr) {
+        std::cerr << m_logBuffer << std::endl;
     }
 }
 
@@ -71,28 +71,22 @@ LogMessage Log::write(LogTarget target, const std::string message) {
     return LogMessage(*this, target, message);
 }
 
-
-Log::Log() { //-------------------------------------------------------------------------------
-    // WICHTIG: Noch Settings/Config modul erstellen für pfade für z.B. log datei/config datei
-
-}
-
 bool Log::openWriter() {
     fs::path log = CFG.replacePath(paths::game::latestLog);
-    logWriter.open(log);
-    writerInitialized = true;
+    m_logWriter.open(log);
+    m_writerInitialized = true;
     
-    return logWriter.is_open();
+    return m_logWriter.is_open();
 }
 
 bool Log::logToFile(const std::string& ms) {
-    writerLock.lock();
-    if(!logWriter.is_open())
+    m_writerLock.lock();
+    if(!m_logWriter.is_open())
         return false;
 
-    logWriter.write(ms.c_str(), ms.size());
-    logWriter.flush();
-    writerLock.unlock();
+    m_logWriter.write(ms.c_str(), ms.size());
+    m_logWriter.flush();
+    m_writerLock.unlock();
     return true;
 }
 

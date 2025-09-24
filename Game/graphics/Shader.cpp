@@ -49,15 +49,15 @@ void Shader::load(const char* vertSrc, const char* fragSrc) {
         throw std::runtime_error("Failed to compile vertex shader");
     }
 
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, frag);
-    glAttachShader(shaderProgram, vert);
-    glLinkProgram(shaderProgram);
+    m_shaderProgram = glCreateProgram();
+    glAttachShader(m_shaderProgram, frag);
+    glAttachShader(m_shaderProgram, vert);
+    glLinkProgram(m_shaderProgram);
 
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &success);
     if(!success) {
         char infoLog[512];
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(m_shaderProgram, 512, NULL, infoLog);
         LOG.write(utils::LogTarget::FileErr, infoLog);
         throw std::runtime_error("Failed to link shaders to program");
     }
@@ -99,8 +99,8 @@ void Shader::load(const fs::path vertPath, const fs::path fragPath) {
 
 // Will crash if GL context is destroyed before this function
 void Shader::destroy() {
-    if(shaderProgram > 0 && glIsProgram(shaderProgram)) {
-        glDeleteProgram(shaderProgram);
-        shaderProgram = 0;
+    if(m_shaderProgram > 0 && glIsProgram(m_shaderProgram)) {
+        glDeleteProgram(m_shaderProgram);
+        m_shaderProgram = 0;
     }
 }

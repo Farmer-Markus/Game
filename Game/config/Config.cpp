@@ -11,15 +11,15 @@
 namespace fs = std::filesystem;
 
 Config::Config() {
-    pathMap["WORKING"] = getWorkingPath();
-    pathMap["HOME"] = getHomePath();
+    m_pathMap["WORKING"] = getWorkingPath();
+    m_pathMap["HOME"] = getHomePath();
 
     // .string() to make windows compiler happy
-    pathMap["CONFIG"] = replacePath(paths::system::config).string();
-    pathMap["CACHE"] = replacePath(paths::system::cache).string();
-    pathMap["PREFIX"] = replacePath(paths::system::prefix).string();
+    m_pathMap["CONFIG"] = replacePath(paths::system::config).string();
+    m_pathMap["CACHE"] = replacePath(paths::system::cache).string();
+    m_pathMap["PREFIX"] = replacePath(paths::system::prefix).string();
 
-    pathMap["DATA"] = replacePath(paths::game::data).string();
+    m_pathMap["DATA"] = replacePath(paths::game::data).string();
 
     prepareGameDirs();
 }
@@ -49,9 +49,9 @@ Config::Config() {
             currOffset = end + 1; // To make adding the next path(above) not add '>'
             std::string key = path.substr(beg, end - beg);
 
-            auto it = pathMap.find(key);
-            if(it == pathMap.end()) {
-                // Path not found in pathMap
+            auto it = m_pathMap.find(key);
+            if(it == m_pathMap.end()) {
+                // Path not found in m_pathMap
                 LOG.write(utils::LogTarget::FileErr, "Config: Failed to replace path. System path not found in pathMap");
                 return "";
 
@@ -74,7 +74,7 @@ void Config::replacePathEntry(const std::string key, const std::string path) {
 #ifdef DEBUG
     LOG.write(utils::LogTarget::Stdout, "Config: Replacing path entry '%s' with path: %s") % key % path;
 #endif
-    pathMap[key] = path;
+    m_pathMap[key] = path;
 }
 
 bool Config::prepareGameDirs() const {

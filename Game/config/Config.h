@@ -22,7 +22,7 @@ private:
     std::string getWorkingPath();
     std::string getHomePath();
 
-    std::unordered_map<std::string, std::string> pathMap;
+    std::unordered_map<std::string, std::string> m_pathMap;
 };
 
 #define CFG Config::Instance()

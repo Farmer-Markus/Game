@@ -17,12 +17,12 @@ public:
 
     // Make return shader program when using glUseProgram(shaderInstance)
     operator unsigned int() const {
-        return shaderProgram;
+        return m_shaderProgram;
     }
 
-    // To manually set shaderProgram to another value eg. 0
+    // To manually set m_shaderProgram to another value eg. 0
     void operator=(const unsigned int val) {
-        shaderProgram = val;
+        m_shaderProgram = val;
     }
 
     // Delete shader program
@@ -37,5 +37,5 @@ public:
 
 private:
 
-    unsigned int shaderProgram = 0;
+    unsigned int m_shaderProgram = 0;
 };

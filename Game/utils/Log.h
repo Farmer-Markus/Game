@@ -28,8 +28,8 @@ class Log;
 
 class LogMessage {
 public:
-    LogMessage(Log& lg, LogTarget tg, const std::string arg)
-                : log(lg), target(tg), logBuffer(arg) {}
+    LogMessage(Log& log, LogTarget target, const std::string arg)
+                : m_log(log), m_target(target), m_logBuffer(arg) {}
 
     ~LogMessage() {
         flush();
@@ -50,20 +50,18 @@ private:
     void flush();
 
 
-    Log& log;
-    LogTarget target;
-    std::string logBuffer;
+    Log& m_log;
+    LogTarget m_target;
+    std::string m_logBuffer;
 };
 
 
 class Log {
     friend LogMessage;
 public:
-    Log();
-
     ~Log() {
-        if(logWriter.is_open())
-            logWriter.close();
+        if(m_logWriter.is_open())
+            m_logWriter.close();
     }
 
     static Log& Instance() {
@@ -77,9 +75,9 @@ private:
     bool openWriter();
     bool logToFile(const std::string& ms);
 
-    bool writerInitialized = false;
-    std::mutex writerLock;
-    std::ofstream logWriter;
+    bool m_writerInitialized = false;
+    std::mutex m_writerLock;
+    std::ofstream m_logWriter;
 };
 
 
