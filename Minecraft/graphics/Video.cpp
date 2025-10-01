@@ -53,6 +53,10 @@ bool Video::isInitialized() const {
     return m_window != NULL && m_glContext != NULL;
 }
 
+// int Video::makeCurrent() {
+//     return SDL_GL_MakeCurrent(m_window, m_glContext);
+// }
+
 void Video::swapBuffers() const {
     SDL_GL_SwapWindow(m_window);
 }

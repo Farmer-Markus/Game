@@ -5,14 +5,6 @@ namespace fs = std::filesystem;
 
 class Shader {
 public:
-    Shader() {};
-
-    // Shader code from variable
-    Shader(const char* vertSrc, const char* fragSrc);
-
-    // Shader code from file
-    Shader(const fs::path vertPath, const fs::path fragPath);
-
     ~Shader();
 
     // Make return shader program when using glUseProgram(shaderInstance)
@@ -25,14 +17,15 @@ public:
         m_shaderProgram = val;
     }
 
-    // Delete shader program
-    void destroy();
-
     // From variable
     void load(const char* vertSrc, const char* fragSrc);
 
     // From file
     void load(const fs::path vertPath, const fs::path fragPath);
+
+
+    // Delete shader program
+    void destroy();
     
 
 private:

@@ -12,6 +12,9 @@ public:
     // const hinter funkton: Funktion verändert keinerlei variablen außer selbst erstellte
     bool isInitialized() const;
 
+    // // Binds local window and gl Context to draw to
+    // int makeCurrent();
+
     // Draw gl buffer to window
     void swapBuffers() const;
 

@@ -8,13 +8,6 @@
 #include <fstream>
 
 
-Shader::Shader(const char* vertSrc, const char* fragSrc) {
-    load(vertSrc, fragSrc);
-}
-
-Shader::Shader(const fs::path vertPath, const fs::path fragPath) {
-    load(vertPath, fragPath);
-}
 
 Shader::~Shader() {
     destroy();
