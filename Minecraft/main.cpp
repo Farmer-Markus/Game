@@ -2,8 +2,8 @@
 
 
 
-// #define STB_IMAGE_IMPLEMENTATION
-// #include <stb_image.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 /*
 Drawcalls in openGl sind sehr langsam! Es kann aber pro drawcall immer nur ein shader program benutzt werden.
@@ -75,73 +75,20 @@ using namespace utils;
 
 
 
-/*
-float verexData[] = {
-    // Vorderseite
-    -0.5f, 0.5f, 0.5f,
-    0.5f, 0.5f, 0.5f,
-    -0.5f, -0.5f, 0.5f,
-    0.5f, -0.5f, 0.5f,
-
-    // Hinterseite
-    -0.5f, 0.5f, -0.5f,
-    0.5f, 0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    0.5f, -0.5f, -0.5f,
-};
-
-unsigned int indizes[] = {
-    0, 1, 2,
-    1, 2, 3
-};
-*/
-
-/*
-float verexData[] = {
-    // 8 eindeutige Eckpunkte
-    -0.5f, -0.5f, -0.5f, // 0
-     0.5f, -0.5f, -0.5f, // 1
-     0.5f,  0.5f, -0.5f, // 2
-    -0.5f,  0.5f, -0.5f, // 3
-    -0.5f, -0.5f,  0.5f, // 4
-     0.5f, -0.5f,  0.5f, // 5
-     0.5f,  0.5f,  0.5f, // 6
-    -0.5f,  0.5f,  0.5f  // 7
-};
-
-unsigned int indizes[] = {
-    // Vorderseite
-    4, 5, 6,
-    4, 6, 7,
-    // Rückseite
-    0, 1, 2,
-    0, 2, 3,
-    // Links
-    0, 4, 7,
-    0, 7, 3,
-    // Rechts
-    1, 5, 6,
-    1, 6, 2,
-    // Oben
-    3, 2, 6,
-    3, 6, 7,
-    // Unten
-    0, 1, 5,
-    0, 5, 4
-};*/
-
 
 // Just flat plate
 float vertexData[] = {
-    -0.5f, 0.5f,
-    0.5f, 0.5f,
-    -0.5f, -0.5f,
-    0.5f, -0.5f
+    // x, y,   u, v                 // Hab textur umgedreht
+    -0.5f,  0.5f,   1.0f, 0.0f, // unten rechts
+     0.5f,  0.5f,   0.0f, 0.0f, // unten links
+    -0.5f, -0.5f,   1.0f, 1.0f, // oben rechts
+     0.5f, -0.5f,   0.0f, 1.0f  // oben links
 };
+
 
 uint indizes[] = {
     0, 1, 2,
-    1, 2, 3
+    1, 3, 2
 };
 //
 
@@ -149,6 +96,8 @@ Video video;
 GLuint VBO, VAO, EBO, instancedVBO;
 Shader shader;
 glm::mat4 view, proj, model;
+unsigned int texture;
+
 
 glm::vec3 camPos(0.0f, 0.0f, -5.0f);
 glm::vec3 cameTop(0.0f, 1.0f, 0.0f);
@@ -161,8 +110,10 @@ float mouseSensitivity = 0.1f;
 float walkSpeed = 0.1f;
 
 struct blockFace {
-    glm::vec3 coords;   // World coords
-    uint8_t face;       // oben, unten, vorne, hinten, links, rechts
+    glm::vec3 coords;           // World coords
+    uint8_t face;               // oben, unten, vorne, hinten, links, rechts
+                                // R, G, B, A
+    glm::vec4 colorMultiplier = glm::vec4(1.0f);  // To change color of texture
 };
 
 
@@ -172,7 +123,51 @@ std::vector<blockFace> blockPositions;
 bool glInit() {
     if(!video.initialize()) return false;
 
-    shader.load(CFG.replacePath("<DATA>/shaders/main.vert"), CFG.replacePath("<DATA>/shaders/main.frag"));
+
+    if(!shader.load(CFG.replacePath("<DATA>/shaders/main.vert"), CFG.replacePath("<DATA>/shaders/main.frag"))) {
+        LOG.write(LogTarget::Stderr, "Failed to load shaders! %s") % shader.getErrorMessage();
+        return false;
+    }
+
+    
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);*/
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -0.5);
+    // load and generate the texture
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(CFG.replacePath("<DATA>/textures/grass_block_top.png").c_str(), &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        int format;
+        if(nrChannels == 1) {
+            format = GL_RED;
+            // Use same channel value for every value(RGB) and 1 for A
+            GLint swizzleMask[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
+            glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+
+        } else if(nrChannels == 2)
+            format = GL_RG;
+        else if(nrChannels == 3)
+            format = GL_RGB;
+        else if(nrChannels == 4)
+            format = GL_RGBA;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
 
 
 
@@ -181,8 +176,8 @@ bool glInit() {
     blockPositions.reserve(worldSize.x * worldSize.y);
     for(size_t x = 0; x < worldSize.x; x++) {
         for(size_t y = 0; y < worldSize.y; y++) {
-            for(uint8_t i = 0; i < 6; i++)
-                blockPositions.push_back({glm::vec3(x, 0, y), i});
+            //for(uint8_t i = 0; i < 6; i++)
+                blockPositions.push_back({glm::vec3(x, y, 0), 2, glm::vec4(0.243f, 0.64f, 0.196f, 1.0f)});
         }
     }
     // for(uint8_t i = 0; i < 6; i++)
@@ -206,21 +201,38 @@ bool glInit() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indizes), indizes, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    // Vertex Data
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    // Vertex texture coordinates
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(3);
+
 
 
     glGenBuffers(1, &instancedVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instancedVBO);
     glBufferData(GL_ARRAY_BUFFER, blockPositions.size() * sizeof(blockFace), blockPositions.data(), GL_STATIC_DRAW);
     
+    // BlockFace coords
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(blockFace), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribDivisor(1, 1);
 
+    // BlockFace facing direction
     glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(blockFace), (void*)(sizeof(glm::vec3)));
     glEnableVertexAttribArray(2);
     glVertexAttribDivisor(2, 1);
+
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(blockFace), (void*)(sizeof(glm::vec3) + sizeof(uint)));
+    glEnableVertexAttribArray(4);
+    glVertexAttribDivisor(4, 1);
+
+
+    // BlockFace texture Atlas coords
+    // ...
+
     /*
     glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(blockFace), (void*)(sizeof(glm::vec3)));
 glEnableVertexAttribArray(2);
@@ -231,7 +243,6 @@ glVertexAttribDivisor(2, 1);*/
 
 
     glEnable(GL_DEPTH_TEST);
-
 
     int w,h;
     video.getWindowSize(&w, &h);
@@ -268,12 +279,13 @@ void glRender() {
     // glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(model));
 
 
+    glBindTexture(GL_TEXTURE_2D, texture);
     glBindVertexArray(VAO);
     
     //glDrawArrays(GL_TRIANGLES, 0, 3);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, blockPositions.size());
+    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, blockPositions.size());
     glBindVertexArray(0);
 }
 

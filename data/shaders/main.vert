@@ -1,14 +1,18 @@
 #version 330 core
-layout(location = 0) in vec3 inLoc;
+layout(location = 0) in vec2 inLoc;
 layout(location = 1) in vec3 inOffset;
-layout(location = 2) in uint blockFace; //
+layout(location = 2) in uint inBlockFace;
+layout(location = 3) in vec2 inTexCoords;
+layout(location = 4) in vec4 inTexColor;
 
+out vec2 texCoords;
+out vec4 texColor;
 
 uniform mat4 view;
 uniform mat4 projection;
 
 
-vec3 rotate(vec3 pos, uint face) {    
+vec3 rotate(vec3 pos, uint face) {
     if(face == 0u) return vec3(pos.x, -pos.z + 0.5f, pos.y);    // Top
     if(face == 1u) return vec3(pos.x, pos.z - 0.5f, pos.y);     // Bottom
     if(face == 2u) return vec3(pos.x, pos.y, pos.z - 0.5f);     // Front
@@ -46,7 +50,9 @@ vec3 rotate(vec3 pos, uint face) {
 
 void main() {
     vec3 rotPosition;
-    rotPosition = rotate(inLoc, blockFace);
+    rotPosition = rotate(vec3(inLoc, 0.0f), inBlockFace);
 
     gl_Position = projection * view * vec4(rotPosition + inOffset, 1.0f);
+    texCoords = inTexCoords;
+    texColor = inTexColor;
 }

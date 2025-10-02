@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <string>
 
 
 namespace fs = std::filesystem;
@@ -18,17 +19,21 @@ public:
     }
 
     // From variable
-    void load(const char* vertSrc, const char* fragSrc);
+    bool load(const char* vertSrc, const char* fragSrc);
 
     // From file
-    void load(const fs::path vertPath, const fs::path fragPath);
-
+    bool load(const fs::path vertPath, const fs::path fragPath);
 
     // Delete shader program
     void destroy();
+
+    const char* getErrorMessage() const {
+        return m_errMessage.c_str();
+    }
     
 
 private:
 
+    std::string m_errMessage;
     unsigned int m_shaderProgram = 0;
 };
