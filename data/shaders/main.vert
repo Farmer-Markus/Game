@@ -4,9 +4,11 @@ layout(location = 1) in vec3 inOffset;
 layout(location = 2) in uint inBlockFace;
 layout(location = 3) in vec2 inTexCoords;
 layout(location = 4) in vec4 inTexColor;
+layout(location = 5) in vec2 inAtlasCoords;
 
 out vec2 texCoords;
 out vec4 texColor;
+out vec2 atlasCoords;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -19,32 +21,6 @@ vec3 rotate(vec3 pos, uint face) {
     if(face == 3u) return vec3(-pos.x, pos.y, pos.z + 0.5f);    // Back
     if(face == 4u) return vec3(0.5f, pos.y, pos.x);             // Left
     if(face == 5u) return vec3(-0.5f, pos.y, -pos.x);           // Right
-
-    // if(face == 0u) { // Top
-    //     pos = vec3(pos.x, -pos.z + 0.5, pos.y);
-    //     //pos.y += 0.5f;
-
-    // } else if(face == 1u) { // Bottom
-    //     pos = vec3(pos.x, pos.z - 0.5, -pos.y);
-    //     // pos.y -= 0.5f;
-
-    // } else if(face == 2u) { // Front
-    //     pos.z -= 0.5f;
-
-    // } else if(face == 3u) { // Back
-    //     pos.x = -pos.x;
-    //     pos.z += 0.5f;
-
-    // } else if(face == 4u) { // Left
-    //     pos = vec3(0.5f, pos.y, pos.x);
-    //     // pos.x += 0.5f;
-
-    // } else if(face == 5u) { // Right
-    //     pos = vec3(-0.5f, pos.y, -pos.x);
-    //     // pos.x -= 0.5f;
-    // }
-
-    // return pos;
 }
 
 
@@ -53,6 +29,8 @@ void main() {
     rotPosition = rotate(vec3(inLoc, 0.0f), inBlockFace);
 
     gl_Position = projection * view * vec4(rotPosition + inOffset, 1.0f);
-    texCoords = inTexCoords;
+
+    const float tileSize = 1.0 / 7.0;
+    texCoords = inTexCoords * tileSize + inAtlasCoords * tileSize;
     texColor = inTexColor;
 }

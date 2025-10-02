@@ -2,6 +2,10 @@
 
 
 
+#include "SDL3/SDL_video.h"
+#include <functional>
+#include <unordered_map>
+#include <utility>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -78,7 +82,7 @@ using namespace utils;
 
 // Just flat plate
 float vertexData[] = {
-    // x, y,   u, v                 // Hab textur umgedreht
+    // x, y,   u, v                 // textur umgedreht
     -0.5f,  0.5f,   1.0f, 0.0f, // unten rechts
      0.5f,  0.5f,   0.0f, 0.0f, // unten links
     -0.5f, -0.5f,   1.0f, 1.0f, // oben rechts
@@ -114,10 +118,41 @@ struct blockFace {
     uint8_t face;               // oben, unten, vorne, hinten, links, rechts
                                 // R, G, B, A
     glm::vec4 colorMultiplier = glm::vec4(1.0f);  // To change color of texture
+    glm::vec2 atlasCoords = glm::vec2(0.0f, 0.0f);
 };
 
+struct grassBlock {
+    glm::vec3 worldCoords;
+    std::vector<blockFace> faces = {
+        {worldCoords, 0, glm::vec4(0.243f, 0.64f, 0.196f, 1.0f), {0.0f, 0.0f}},
+        {worldCoords, 1, glm::vec4(0.65f), {1.0f, 0.0f}},
+        {worldCoords, 2, glm::vec4(0.65f), {2.0f, 0.0f}},
+        {worldCoords, 3, glm::vec4(0.65f), {2.0f, 0.0f}},
+        {worldCoords, 4, glm::vec4(0.65f), {2.0f, 0.0f}},
+        {worldCoords, 5, glm::vec4(0.65f), {2.0f, 0.0f}}
+    };
+};
 
-std::vector<blockFace> blockPositions;
+struct worldPos {
+    float x,y,z;
+
+    bool operator==(const worldPos& o) const {
+        return (x == o.x && y == o.y && z == o.z);
+    }
+};
+
+namespace std {
+    template<>
+    struct hash<worldPos> {
+        size_t operator()(const worldPos& wp) const {
+            return hash<float>()(wp.x) ^ hash<float>()(wp.y) ^ hash<float>()(wp.z);
+        }
+    };
+}
+
+
+std::unordered_map<worldPos, grassBlock> world;
+std::vector<blockFace> renderFaces;
 
 
 bool glInit() {
@@ -142,7 +177,7 @@ bool glInit() {
     //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -0.5);
     // load and generate the texture
     int width, height, nrChannels;
-    unsigned char *data = stbi_load(CFG.replacePath("<DATA>/textures/grass_block_top.png").c_str(), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(CFG.replacePath("<DATA>/textures/blockAtlas.png").c_str(), &width, &height, &nrChannels, 0);
     if (data)
     {
         int format;
@@ -173,13 +208,44 @@ bool glInit() {
 
     glm::vec2 worldSize = glm::vec2(100, 100);
 
-    blockPositions.reserve(worldSize.x * worldSize.y);
+    world.reserve(worldSize.x * worldSize.y);
     for(size_t x = 0; x < worldSize.x; x++) {
         for(size_t y = 0; y < worldSize.y; y++) {
-            //for(uint8_t i = 0; i < 6; i++)
-                blockPositions.push_back({glm::vec3(x, y, 0), 2, glm::vec4(0.243f, 0.64f, 0.196f, 1.0f)});
+            world[{(float)x, 0.0f, (float)y}] = {{x, 0.0f, y}};
         }
     }
+
+
+    // Some sort of face culling. Don't draw faces that are next to another face
+    renderFaces.reserve(worldSize.x * worldSize.y);
+    for(const auto& entry : world) {
+        const grassBlock& b = entry.second;
+        if(world.find({b.worldCoords.x, b.worldCoords.y + 1.0f, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[0]);
+
+        }
+        if(world.find({b.worldCoords.x, b.worldCoords.y - 1.0f, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[1]);
+
+        }
+        if(world.find({b.worldCoords.x, b.worldCoords.y, b.worldCoords.z - 1.0f}) == world.end()) {
+            renderFaces.push_back(b.faces[2]);
+
+        }
+        if(world.find({b.worldCoords.x, b.worldCoords.y, b.worldCoords.z + 1.0f}) == world.end()) {
+            renderFaces.push_back(b.faces[3]);
+
+        }
+        if(world.find({b.worldCoords.x + 1.0f, b.worldCoords.y, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[4]);
+
+        }
+        if(world.find({b.worldCoords.x - 1.0f, b.worldCoords.y, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[5]);
+
+        }
+    }
+
     // for(uint8_t i = 0; i < 6; i++)
     //     blockPositions.push_back({glm::vec3(2, 2, 3), i});
     
@@ -213,7 +279,7 @@ bool glInit() {
 
     glGenBuffers(1, &instancedVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instancedVBO);
-    glBufferData(GL_ARRAY_BUFFER, blockPositions.size() * sizeof(blockFace), blockPositions.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, renderFaces.size() * sizeof(blockFace), renderFaces.data(), GL_STATIC_DRAW);
     
     // BlockFace coords
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(blockFace), (void*)0);
@@ -221,13 +287,18 @@ bool glInit() {
     glVertexAttribDivisor(1, 1);
 
     // BlockFace facing direction
-    glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(blockFace), (void*)(sizeof(glm::vec3)));
+    glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(blockFace), (void*)(offsetof(blockFace, face)));
     glEnableVertexAttribArray(2);
     glVertexAttribDivisor(2, 1);
 
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(blockFace), (void*)(sizeof(glm::vec3) + sizeof(uint)));
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(blockFace), (void*)(offsetof(blockFace, colorMultiplier)));
     glEnableVertexAttribArray(4);
     glVertexAttribDivisor(4, 1);
+
+    // Texture atlas start coords
+    glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(blockFace), (void*)(offsetof(blockFace, atlasCoords)));
+    glEnableVertexAttribArray(5);
+    glVertexAttribDivisor(5, 1);
 
 
     // BlockFace texture Atlas coords
@@ -259,6 +330,38 @@ glVertexAttribDivisor(2, 1);*/
 
 
 void glRender() {
+    renderFaces.clear();
+    for(const auto& entry : world) {
+        const grassBlock& b = entry.second;
+
+    
+        if(world.find({b.worldCoords.x, b.worldCoords.y + 1.0f, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[0]);
+
+        }
+        if(world.find({b.worldCoords.x, b.worldCoords.y - 1.0f, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[1]);
+
+        }
+        if(world.find({b.worldCoords.x, b.worldCoords.y, b.worldCoords.z - 1.0f}) == world.end()) {
+            renderFaces.push_back(b.faces[2]);
+
+        }
+        if(world.find({b.worldCoords.x, b.worldCoords.y, b.worldCoords.z + 1.0f}) == world.end()) {
+            renderFaces.push_back(b.faces[3]);
+
+        }
+        if(world.find({b.worldCoords.x + 1.0f, b.worldCoords.y, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[4]);
+
+        }
+        if(world.find({b.worldCoords.x - 1.0f, b.worldCoords.y, b.worldCoords.z}) == world.end()) {
+            renderFaces.push_back(b.faces[5]);
+
+        }
+    }
+
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shader);
     
@@ -283,9 +386,9 @@ void glRender() {
     glBindVertexArray(VAO);
     
     //glDrawArrays(GL_TRIANGLES, 0, 3);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, blockPositions.size());
+    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, renderFaces.size());
     glBindVertexArray(0);
 }
 
@@ -295,6 +398,7 @@ int main() {
         return 1;
 
     bool captMouse = true;
+    bool outlines = false;
     video.setMouseCapture(captMouse);
 
     bool running = true;
@@ -358,6 +462,24 @@ int main() {
                                 video.setMouseCapture(true);
                                 captMouse = true;
                             }
+                            break;
+                        
+                        case SDLK_O:
+                            if(outlines) {
+                                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                                outlines = false;
+                            } else {
+                                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                                outlines = true;
+                            }
+                            break;
+                        
+                        case SDLK_PLUS:
+                            walkSpeed += 0.1f;
+                            break;
+                        
+                        case SDLK_MINUS:
+                            walkSpeed -= 0.1f;
                             break;
                     }
                     break;
